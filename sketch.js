@@ -97,7 +97,9 @@ function draw() {
               y: y + random(-5, 5),
               vx: random(-1, 1),
               vy: random(-2, -4),
-              life: 255
+              life: 255,
+              size: random(10, 20),
+              type: hand.handedness // 記錄是左手還是右手
             });
           }
 
@@ -124,13 +126,27 @@ function draw() {
     let p = fireParticles[i];
     p.x += p.vx;
     p.y += p.vy;
-    p.life -= 15; // 消失速度
+    p.life -= 12; // 稍微減慢消失速度
+    p.size *= 0.92; // 粒子隨時間縮小，更像真實火焰
     if (p.life <= 0) {
       fireParticles.splice(i, 1);
     } else {
       noStroke();
-      fill(255, random(50, 150), 0, p.life); // 橙紅色調
-      circle(p.x, p.y, random(5, 15));
+      
+      if (p.type === "Left") {
+        // 左手：青色 (Cyan) 漸層
+        let r = 0;
+        let g = map(p.life, 255, 0, 255, 100);
+        let b = 255;
+        fill(r, g, b, p.life);
+      } else {
+        // 右手：紅橙色漸層
+        let r = 255;
+        let g = map(p.life, 255, 0, 200, 0);
+        let b = 0;
+        fill(r, g, b, p.life);
+      }
+      circle(p.x, p.y, p.size);
     }
   }
 
@@ -153,6 +169,6 @@ function draw() {
   fill(0); // 設定文字顏色為黑色
   noStroke();
   textSize(40);
-  textAlign(CENTER, TOP);
-  text("414730027 王瑀瑄", width / 2, 30);
+  textAlign(CENTER, BOTTOM); // 以文字底部為對齊點
+  text("414730027 王瑀瑄", width / 2, vY - 10); // 放置在影像 Y 座標上方 10 像素處
 }
