@@ -1,23 +1,21 @@
-// Face Mesh Detection with ml5.js  
-// https://thecodingtrain.com/tracks/ml5js-beginners-guide/ml5/facemesh  
-// https://youtu.be/R5UZsIwPbJA  
+// Hand Pose Detection with ml5.js
+// https://thecodingtrain.com/tracks/ml5js-beginners-guide/ml5/hand-pose
 
 let video;
-let faceMesh;
-let faces = [];
+let handPose;
+let hands = [];
 
 function preload() {
-  // Initialize FaceMesh model with a maximum of one face and flipped video input
-  faceMesh = ml5.faceMesh({ maxFaces: 1, flipped: true });
+  // Initialize HandPose model with flipped video input
+  handPose = ml5.handPose({ flipped: true });
 }
 
 function mousePressed() {
-  // Log detected face data tothe console
-  console.log(faces);
+  console.log(hands);
 }
 
-function gotFaces(results) {
-  faces = results;
+function gotHands(results) {
+  hands = results;
 }
 
 function setup() {
@@ -25,8 +23,8 @@ function setup() {
   video = createCapture(VIDEO, { flipped: true });
   video.hide();
 
-  // Start detecting faces
-  faceMesh.detectStart(video, gotFaces);
+  // Start detecting hands
+  handPose.detectStart(video, gotHands);
 }
 
 function windowResized() {
@@ -36,27 +34,38 @@ function windowResized() {
 function draw() {
   background('#e7c6ff');
 
-  // Calculate dimensions: 50% of the canvas width and height
+  // 計算影像大小：全螢幕寬高的 50%
   let vW = width * 0.5;
   let vH = height * 0.5;
+  // 計算置中座標
   let vX = (width - vW) / 2;
   let vY = (height - vH) / 2;
 
   image(video, vX, vY, vW, vH);
 
-  // Ensure at least one face is detected
-  if (faces.length > 0) {
-    let face = faces[0];
+  // Ensure at least one hand is detected
+  if (hands.length > 0) {
+    for (let hand of hands) {
+      if (hand.confidence > 0.1) {
+        // Loop through keypoints and draw circles
+        for (let i = 0; i < hand.keypoints.length; i++) {
+          let keypoint = hand.keypoints[i];
 
-    // Draw keypoints on the detected face
-    for (let i = 0; i < face.keypoints.length; i++) {
-      let keypoint = face.keypoints[i];
-      // Map keypoint coordinates to the scaled video position
-      let x = map(keypoint.x, 0, video.width, vX, vX + vW);
-      let y = map(keypoint.y, 0, video.height, vY, vY + vH);
-      stroke(255, 255, 0);
-      strokeWeight(2);
-      point(x, y);
+          // Color-code based on left or right hand
+          if (hand.handedness == "Left") {
+            fill(255, 0, 255);
+          } else {
+            fill(255, 255, 0);
+          }
+          
+          // 將偵測點座標映射到縮放後的影像位置
+          let x = map(keypoint.x, 0, video.width, vX, vX + vW);
+          let y = map(keypoint.y, 0, video.height, vY, vY + vH);
+
+          noStroke();
+          circle(x, y, 16);
+        }
+      }
     }
   }
 }
