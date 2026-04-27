@@ -5,6 +5,7 @@ let video;
 let handPose;
 let hands = [];
 let bubbles = []; // 用於存放水泡的陣列
+let fireParticles = []; // 用於存放火焰粒子的陣列
 
 function preload() {
   // Initialize HandPose model with flipped video input
@@ -89,6 +90,17 @@ function draw() {
           let y = map(keypoint.y, 0, video.height, vY, vY + vH);
           circle(x, y, 10);
 
+          // 在關節處產生火焰粒子
+          for (let j = 0; j < 2; j++) {
+            fireParticles.push({
+              x: x + random(-5, 5),
+              y: y + random(-5, 5),
+              vx: random(-1, 1),
+              vy: random(-2, -4),
+              life: 255
+            });
+          }
+
           // 在關鍵點 4, 8, 12, 16, 20 (指尖) 產生水泡
           let tips = [4, 8, 12, 16, 20];
           if (tips.includes(hand.keypoints.indexOf(keypoint))) {
@@ -107,6 +119,21 @@ function draw() {
     }
   }
 
+  // 更新並繪製火焰特效
+  for (let i = fireParticles.length - 1; i >= 0; i--) {
+    let p = fireParticles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.life -= 15; // 消失速度
+    if (p.life <= 0) {
+      fireParticles.splice(i, 1);
+    } else {
+      noStroke();
+      fill(255, random(50, 150), 0, p.life); // 橙紅色調
+      circle(p.x, p.y, random(5, 15));
+    }
+  }
+
   // 更新並繪製水泡
   for (let i = bubbles.length - 1; i >= 0; i--) {
     let b = bubbles[i];
@@ -122,10 +149,10 @@ function draw() {
     }
   }
 
-  // 在畫布中間加上置中文字
+  // 在畫布上方加上置中文字
   fill(0); // 設定文字顏色為黑色
   noStroke();
   textSize(40);
-  textAlign(CENTER, CENTER);
-  text("414730027 王瑀瑄", width / 2, height / 2);
+  textAlign(CENTER, TOP);
+  text("414730027 王瑀瑄", width / 2, 30);
 }
