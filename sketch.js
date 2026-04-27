@@ -4,6 +4,7 @@
 let video;
 let handPose;
 let hands = [];
+let bubbles = []; // 用於存放水泡的陣列
 
 function preload() {
   // Initialize HandPose model with flipped video input
@@ -47,25 +48,84 @@ function draw() {
   if (hands.length > 0) {
     for (let hand of hands) {
       if (hand.confidence > 0.1) {
-        // Loop through keypoints and draw circles
-        for (let i = 0; i < hand.keypoints.length; i++) {
-          let keypoint = hand.keypoints[i];
+        // 設定顏色（左手洋紅色，右手黃色）
+        if (hand.handedness == "Left") {
+          stroke(255, 0, 255);
+          fill(255, 0, 255);
+        } else {
+          stroke(255, 255, 0);
+          fill(255, 255, 0);
+        }
 
-          // Color-code based on left or right hand
-          if (hand.handedness == "Left") {
-            fill(255, 0, 255);
-          } else {
-            fill(255, 255, 0);
+        // 定義要串接在一起的關鍵點群組
+        let fingerGroups = [
+          [0, 1, 2, 3, 4],     // 大拇指
+          [5, 6, 7, 8],        // 食指
+          [9, 10, 11, 12],     // 中指
+          [13, 14, 15, 16],    // 無名指
+          [17, 18, 19, 20]     // 小指
+        ];
+
+        // 畫出手指連線
+        strokeWeight(4);
+        for (let group of fingerGroups) {
+          for (let i = 0; i < group.length - 1; i++) {
+            let p1 = hand.keypoints[group[i]];
+            let p2 = hand.keypoints[group[i + 1]];
+
+            let x1 = map(p1.x, 0, video.width, vX, vX + vW);
+            let y1 = map(p1.y, 0, video.height, vY, vY + vH);
+            let x2 = map(p2.x, 0, video.width, vX, vX + vW);
+            let y2 = map(p2.y, 0, video.height, vY, vY + vH);
+
+            line(x1, y1, x2, y2);
           }
-          
-          // 將偵測點座標映射到縮放後的影像位置
+        }
+
+        // 畫出關鍵點小圓圈
+        noStroke();
+        for (let keypoint of hand.keypoints) {
           let x = map(keypoint.x, 0, video.width, vX, vX + vW);
           let y = map(keypoint.y, 0, video.height, vY, vY + vH);
+          circle(x, y, 10);
 
-          noStroke();
-          circle(x, y, 16);
+          // 在關鍵點 4, 8, 12, 16, 20 (指尖) 產生水泡
+          let tips = [4, 8, 12, 16, 20];
+          if (tips.includes(hand.keypoints.indexOf(keypoint))) {
+            if (frameCount % 5 === 0) { // 每 5 幀產生一個，避免過多
+              bubbles.push({
+                x: x,
+                y: y,
+                startY: y,
+                size: random(10, 25),
+                popLimit: random(50, 150) // 隨機上升高度後破掉
+              });
+            }
+          }
         }
       }
     }
   }
+
+  // 更新並繪製水泡
+  for (let i = bubbles.length - 1; i >= 0; i--) {
+    let b = bubbles[i];
+    b.y -= 2; // 水泡往上飄移
+    noFill();
+    stroke(255);
+    strokeWeight(1.5);
+    circle(b.x, b.y, b.size);
+
+    // 如果水泡上升超過限定高度或超出畫面，則移除 (破掉)
+    if (b.startY - b.y > b.popLimit || b.y < 0) {
+      bubbles.splice(i, 1);
+    }
+  }
+
+  // 在畫布中間加上置中文字
+  fill(0); // 設定文字顏色為黑色
+  noStroke();
+  textSize(40);
+  textAlign(CENTER, CENTER);
+  text("414730027 王瑀瑄", width / 2, height / 2);
 }
